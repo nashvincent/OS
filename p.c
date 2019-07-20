@@ -19,6 +19,12 @@ int main (int argc, char *argv[])
 		printf("Pipe Failed\n");
 		exit(EXIT_FAILURE);
 	}
+
+	if (pipe(pipeOutfd) == -1)
+	{
+		printf("Pipe Failed\n");
+		exit(EXIT_FAILURE);
+	}
 	
 	// Input the details
 	printf("Enter the 6 marks of the student: ");
@@ -42,11 +48,17 @@ int main (int argc, char *argv[])
 		// TODO
 		printf("Sending student marks to child process...\n");
 		close(pipefd[0]);	// Closes the unused read end of the pipe
+		close(pipeOutfd[1]);
 		write(pipefd[1], mark, sizeof(mark)/sizeof(int));
 		close(pipefd[1]);
 			//printf("Parent waiting for child process to complete\n");
 		wait(NULL);
-		printf ("Parent process terminating\n");
+		char *R;
+		read(pipeOutfd[0], &R, 4);
+		close(pipeOutfd[0]);
+		printf("Result: %s\n", R);
+		printf("Parent process terminating\n");
+		
 		
 		/*
 		char result;
@@ -65,6 +77,7 @@ int main (int argc, char *argv[])
 		// TODO	
 		printf("Child process recieving marks...\n");
 		close(pipefd[1]);	// Closes the unused write end of the pipe
+		close(pipeOutfd[0]);
 		int temp;
 		int sum = 0;
 		for (int j = 0; j <= MAX_SUBJECTS; j++) {
@@ -73,11 +86,16 @@ int main (int argc, char *argv[])
 		}
 		close(pipefd[0]);
 		sum = sum/6;
-
+		
+		char *r;
+		
 		if (sum >= 40)
-			printf("Result: Pass\n");
+			r = "Pass";
 		else
-			printf("Result: Fail\n");
+			r = "Fail";
+			
+		write(pipeOutfd[1], &r, 4);
+		close(pipeOutfd[1]);
 		
 		exit(0);
 	}
